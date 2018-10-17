@@ -1,3 +1,0 @@
-# RIP_Implementation
-
-aa
