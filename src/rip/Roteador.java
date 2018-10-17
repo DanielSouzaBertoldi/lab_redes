@@ -16,16 +16,16 @@ import java.util.Map.Entry;
  * @author Daniel
  */
 public class Roteador implements Serializable {
-    private ArrayList<Integer> vizinhos;
+    private ArrayList<String> vizinhos;
     private String whoIam;
     private HashMap<String, Map.Entry<String, String>> tabela;
     
-    public Roteador(String name, HashMap<String, Entry<String, String>> tabela, ArrayList<Integer> vizinhos){
+    public Roteador(String name, HashMap<String, Entry<String, String>> tabela, ArrayList<String> vizinhos){
         this.whoIam = name;
         this.tabela = tabela;
         this.vizinhos = vizinhos;
     }
-    
+        
     public HashMap getTabela(){
         return this.tabela;
     }
@@ -35,7 +35,7 @@ public class Roteador implements Serializable {
         return this.whoIam;
     }
     
-    public ArrayList getVizinhos(){
+    public ArrayList<String> getVizinhos(){
         return this.vizinhos;
     }
 }

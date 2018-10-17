@@ -19,10 +19,10 @@ import com.google.gson.*;
  */
 
 class Client extends Thread {
-   private final static int SERVER_PORT = 6879;
+   private String SERVER_PORT;
    private Socket clientSocket;
    private PrintWriter out;
-   private Roteador node;
+   private final Roteador node;
    
    Client(Roteador node) {
       this.node = node;
@@ -30,59 +30,63 @@ class Client extends Thread {
    }
    
    public void run() {
-       try {
-           clientSocket = new Socket("localhost", SERVER_PORT);
-           //out envia mensagens.
-           ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-           
-           JSONObject json = new JSONObject();
-           json.put("No_Origem", node.getName());
-           json.put("Tabela", this.node.getTabela().toString());
-           System.out.println("Enviando o JSON: "+json.toString());
+       
+       for(String vizinho : node.getVizinhos()){
+            this.SERVER_PORT = "666" + vizinho;
+            System.out.println("Conectando-se na porta: " + SERVER_PORT);
+            
+            try {
+                clientSocket = new Socket("localhost", Integer.parseInt(SERVER_PORT));
+                //out envia mensagens.
+                ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
 
-           String whatsthejson = json.toString();
-           
-           //o método .println envia coisas pelo buffer de saída
-           out.writeObject(node);
-           out.flush();
-           out.reset();
-           
-       } catch (Exception e) {
-           System.out.println(e.toString());
+                JSONObject json = new JSONObject();
+                json.put("No_Origem", node.getName());
+                json.put("Tabela", this.node.getTabela().toString());
+                System.out.println("Enviando o JSON: "+json.toString());
+
+                String whatsthejson = json.toString();
+
+                //o método .println envia coisas pelo buffer de saída
+                out.writeObject(node);
+                out.flush();
+                out.reset();
+
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
        }
    }
 }
 
 class Server extends Thread {
    private int port;
-   private final static int SERVER_PORT = 6879;
+   private final String SERVER_PORT;
    private ObjectInputStream in;
    private ServerSocket serverSocket;
    private Socket clientSocket;
-   private String threadName;
+   private final Roteador node;
    
-   Server( String name) {
-      threadName = name;
-      System.out.println("Criando... " +  threadName );
+   Server(Roteador node) {
+      this.node = node;
+      this.SERVER_PORT = "666"+node.getName();
+      System.out.println("Minha porta é: "+ SERVER_PORT);
    }
    
    @Override
    public void run() {
        try{
-           serverSocket = new ServerSocket(SERVER_PORT);
+           serverSocket = new ServerSocket(Integer.parseInt(SERVER_PORT));
            clientSocket = serverSocket.accept();
                       
+           System.out.println("Chegou alguém aqui!");
            //in recebe mensagens
            in = new ObjectInputStream(clientSocket.getInputStream());  
-           Roteador inputLine;
-           while((inputLine = (Roteador) in.readObject()) != null) {
-               if(".".equals(inputLine)){
-                   System.out.println("Desligando servidor...");
-                   break;
+           while(true) {
+               Roteador inputLine = (Roteador) in.readObject();
+               if(inputLine instanceof Roteador){
+                System.out.println("E esse alguém tem o nome: "+inputLine.getName()+"\nE a tabela: "+inputLine.getTabela().toString());
                }
-               
-               System.out.println("chegou aquui? \n"+ inputLine.getName());
-               System.out.println("chegou aquui? \n"+ inputLine.getVizinhos().toString());
            }
        } catch (Exception e) {
            System.out.println(e.toString());
@@ -91,7 +95,7 @@ class Server extends Thread {
 }
 
 public class RIP {
-    static private ArrayList<Integer> vizinhos; 
+    static private ArrayList<String> vizinhos; 
     static private Roteador t;
     private static HashMap <String, Entry<String, String>> tabela = new HashMap<>();
     
@@ -109,9 +113,16 @@ public class RIP {
         System.out.println("Vizinhos do nó "+i+": "+vizinhos.toString());
         System.out.println("Tabela do nó "+i+": "+t.getTabela().toString());
         
-        Server s1 = new Server(Integer.toString(i));
+        Server s1 = new Server(t);
         s1.start();
 
+        br = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            br.readLine();
+        } catch (IOException ex) {
+            Logger.getLogger(RIP.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         Client c1 = new Client(t);
         c1.start();
     }
@@ -119,7 +130,7 @@ public class RIP {
     static public void init(int i) {
         switch (i){
            case 0:
-               vizinhos = new ArrayList<>(Arrays.asList(1, 2, 3));
+               vizinhos = new ArrayList<>(Arrays.asList("1", "2", "3"));
                tabela.put("0", new SimpleEntry("0", null));
                tabela.put("1", new SimpleEntry("1", null));
                tabela.put("2", new SimpleEntry("3", null));
@@ -127,7 +138,7 @@ public class RIP {
                t = new Roteador("0", tabela, vizinhos);
                break;
            case 1:
-               vizinhos = new ArrayList<>(Arrays.asList(0, 2));
+               vizinhos = new ArrayList<>(Arrays.asList("0", "2"));
                tabela.put("0", new SimpleEntry("1", null));
                tabela.put("1", new SimpleEntry("0", null));
                tabela.put("2", new SimpleEntry("1", null));
@@ -136,7 +147,7 @@ public class RIP {
 
                break;
            case 2:
-               vizinhos = new ArrayList<>(Arrays.asList(0, 1, 3));
+               vizinhos = new ArrayList<>(Arrays.asList("0", "1", "3"));
                tabela.put("0", new SimpleEntry("3", null));
                tabela.put("1", new SimpleEntry("1", null));
                tabela.put("2", new SimpleEntry("0", null));
@@ -144,7 +155,7 @@ public class RIP {
                t = new Roteador("2", tabela, vizinhos);
                break;
            case 3:
-               vizinhos = new ArrayList<>(Arrays.asList(0, 2));
+               vizinhos = new ArrayList<>(Arrays.asList("0", "2"));
                tabela.put("0", new SimpleEntry("7", null));
                tabela.put("1", new SimpleEntry("999", ""));
                tabela.put("2", new SimpleEntry("2", null));
