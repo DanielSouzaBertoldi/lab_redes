@@ -116,12 +116,24 @@ public class RIP {
                break;
            case 1:
                vizinhos = new ArrayList<>(Arrays.asList(0, 2));
+               tabela.put("0", 1);
+               tabela.put("1", 0);
+               tabela.put("2", 3);
+               tabela.put("3", 999);
                break;
            case 2:
                vizinhos = new ArrayList<>(Arrays.asList(0, 1, 3));
+               tabela.put("0", 3);
+               tabela.put("1", 1);
+               tabela.put("2", 0);
+               tabela.put("3", 2);
                break;
            case 3:
                vizinhos = new ArrayList<>(Arrays.asList(0, 2));
+               tabela.put("0", 7);
+               tabela.put("1", 999);
+               tabela.put("2", 2);
+               tabela.put("3", 0);
                break;
        }
     }
