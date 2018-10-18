@@ -26,6 +26,7 @@ class Client extends Thread {
       System.out.println("Criando o nó   " +  node.getName() );
    }
    
+   @Override
    public void run() {
        
        for(String vizinho : node.getVizinhos()){
@@ -68,15 +69,16 @@ class Server extends Thread {
        try{
            serverSocket = new ServerSocket(Integer.parseInt(SERVER_PORT));
            clientSocket = serverSocket.accept();
-                      
+           
            System.out.println("Chegou alguém aqui!");
-           //in recebe mensagens
-           in = new ObjectInputStream(clientSocket.getInputStream());  
+           Roteador inputLine;
            while(true) {
-               Roteador inputLine = (Roteador) in.readObject();
-               if(inputLine instanceof Roteador){
+               //in recebe mensagens
+               in = new ObjectInputStream(clientSocket.getInputStream());  
+               if((inputLine = (Roteador) in.readObject()) != null){
                 System.out.println("E esse alguém tem o nome: "+inputLine.getName()+"\nE a tabela: "+inputLine.getTabela().toString());
                }
+               clientSocket = serverSocket.accept();
            }
        } catch (Exception e) {
            System.out.println(e.toString());
