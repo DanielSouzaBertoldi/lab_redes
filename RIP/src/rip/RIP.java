@@ -52,8 +52,9 @@ class Client extends Thread {
 
 class Server extends Thread {
    private int port;
-   private final String SERVER_PORT;
+   private String SERVER_PORT;
    private ObjectInputStream in;
+   private ObjectOutputStream out;
    private ServerSocket serverSocket;
    private Socket clientSocket;
    private final Roteador node;
@@ -70,18 +71,41 @@ class Server extends Thread {
            serverSocket = new ServerSocket(Integer.parseInt(SERVER_PORT));
            clientSocket = serverSocket.accept();
            
-           System.out.println("Chegou alguém aqui!");
            Roteador inputLine;
            while(true) {
                //in recebe mensagens
                in = new ObjectInputStream(clientSocket.getInputStream());  
                if((inputLine = (Roteador) in.readObject()) != null){
-                System.out.println("E esse alguém tem o nome: "+inputLine.getName()+"\nE a tabela: "+inputLine.getTabela().toString());
+                   //Se foi atualizado, envia pra todos os vizinhos                   
+                    System.out.println("\nOi, alguem abriu uma conexão comigo, roteador: "+this.node.getName()+"\nMinha tabela atual é: "+this.node.getTabela().toString());
+                    if(this.node.update(this.node, inputLine)){
+                        for(String vizinho : this.node.getVizinhos()){
+                            this.SERVER_PORT = "666" + vizinho;
+                            System.out.println("Enviando atualização de tabela na porta: " + SERVER_PORT);
+
+                            try {
+                                clientSocket = new Socket("localhost", Integer.parseInt(SERVER_PORT));
+                                //out envia mensagens.
+                                ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+
+                                //o método .println envia coisas pelo buffer de saída
+                                out.writeObject(this.node);
+                                out.flush();
+                                out.reset();
+
+                            } catch (IOException | NumberFormatException e) {
+                                System.out.println("Deu algum erro: "+e.toString());
+                            }
+                       }
+                    } else {
+                        System.out.println("Não foi atualizado esse LIXO");
+                    }
                }
+               clientSocket.close();
                clientSocket = serverSocket.accept();
            }
        } catch (Exception e) {
-           System.out.println(e.toString());
+           System.out.println("Deu algum erro: "+e.toString());
        }
    }
 }
@@ -89,7 +113,7 @@ class Server extends Thread {
 public class RIP {
     static private ArrayList<String> vizinhos; 
     static private Roteador t;
-    private static HashMap <String, Entry<String, String>> tabela = new HashMap<>();
+    private static HashMap <String, Entry<Integer, String>> tabela = new HashMap<>();
     
     public static void main(String[] args) {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));        
@@ -123,35 +147,35 @@ public class RIP {
         switch (i){
            case 0:
                vizinhos = new ArrayList<>(Arrays.asList("1", "2", "3"));
-               tabela.put("0", new SimpleEntry("0", null));
-               tabela.put("1", new SimpleEntry("1", null));
-               tabela.put("2", new SimpleEntry("3", null));
-               tabela.put("3", new SimpleEntry("7", null));
+               tabela.put("0", new SimpleEntry(0, null));
+               tabela.put("1", new SimpleEntry(1, null));
+               tabela.put("2", new SimpleEntry(3, null));
+               tabela.put("3", new SimpleEntry(7, null));
                t = new Roteador("0", tabela, vizinhos);
                break;
            case 1:
                vizinhos = new ArrayList<>(Arrays.asList("0", "2"));
-               tabela.put("0", new SimpleEntry("1", null));
-               tabela.put("1", new SimpleEntry("0", null));
-               tabela.put("2", new SimpleEntry("1", null));
-               tabela.put("3", new SimpleEntry("999", ""));
+               tabela.put("0", new SimpleEntry(1, null));
+               tabela.put("1", new SimpleEntry(0, null));
+               tabela.put("2", new SimpleEntry(1, null));
+               tabela.put("3", new SimpleEntry(999, ""));
                t = new Roteador("1", tabela, vizinhos);
 
                break;
            case 2:
                vizinhos = new ArrayList<>(Arrays.asList("0", "1", "3"));
-               tabela.put("0", new SimpleEntry("3", null));
-               tabela.put("1", new SimpleEntry("1", null));
-               tabela.put("2", new SimpleEntry("0", null));
-               tabela.put("3", new SimpleEntry("2", null));
+               tabela.put("0", new SimpleEntry(3, null));
+               tabela.put("1", new SimpleEntry(1, null));
+               tabela.put("2", new SimpleEntry(0, null));
+               tabela.put("3", new SimpleEntry(2, null));
                t = new Roteador("2", tabela, vizinhos);
                break;
            case 3:
                vizinhos = new ArrayList<>(Arrays.asList("0", "2"));
-               tabela.put("0", new SimpleEntry("7", null));
-               tabela.put("1", new SimpleEntry("999", ""));
-               tabela.put("2", new SimpleEntry("2", null));
-               tabela.put("3", new SimpleEntry("0", null));
+               tabela.put("0", new SimpleEntry(7, null));
+               tabela.put("1", new SimpleEntry(999, "-1"));
+               tabela.put("2", new SimpleEntry(2, null));
+               tabela.put("3", new SimpleEntry(0, null));
                t = new Roteador("3", tabela, vizinhos);
                break;
        }
